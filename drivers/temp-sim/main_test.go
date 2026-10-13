@@ -3,14 +3,36 @@ package main
 import (
 	"errors"
 	"context"
-	"fmt"
 	"io"
 	"net"
 	"testing"
 	"time"
 	"bytes"
 	"strings"
+	"encoding/json"
+	"math"
 )
+
+func TestSimulatedTemperatureServer(t *testing.T) {
+	s := NewSimulatedTemperatureServer(nil)
+	var readings []Reading
+	for range 100 {
+		readings = append(readings, s.GetReading())
+	}
+	if len(readings) != 100 {
+		t.Errorf("Only got %d readings", len(readings))
+	}
+	for i := range readings{
+		if i == 0{
+			continue
+		}
+		current := readings[i].Temperature
+		last := readings[i].Temperature
+		if math.Abs(current - last) > 0.5 {
+			t.Errorf("Reading not within half a degree of the last reading.  Current: %g, Last: %g", current, last)
+		}
+	}
+}
 
 func TestSimulateTempReading(t *testing.T) {
 	var results []float64
@@ -31,35 +53,6 @@ func TestSimulateTempReading(t *testing.T) {
 	}
 }
 
-func TestCreatePayload(t *testing.T) {
-	// Unix time: 1000000000
-	moment := time.Date(2001, time.September, 9, 1, 46, 40, 0, time.UTC)
-
-	now := time.Now()
-	uNow := now.Unix()
-
-	var payloadTests = []struct {
-		instant  time.Time
-		reading  float64
-		expected string
-	}{
-		{moment, 10.0, "{time: 1000000000, temp: 10.00}\n"},
-		{moment, -3.57, "{time: 1000000000, temp: -3.57}\n"},
-		{moment, 3.5798, "{time: 1000000000, temp: 3.58}\n"},
-		{moment, 20.4, "{time: 1000000000, temp: 20.40}\n"},
-		{now, 20.4, fmt.Sprintf("{time: %d, temp: 20.40}\n", uNow)},
-	}
-	for _, pt := range payloadTests {
-		t.Run(pt.expected, func(t *testing.T) {
-			got := CreatePayload(pt.instant, pt.reading)
-			if pt.expected != got {
-				t.Errorf("wanted: %q, got %q", pt.expected, got)
-			}
-
-		})
-	}
-}
-
 func TestHandleConn(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -68,7 +61,8 @@ func TestHandleConn(t *testing.T) {
 	defer srv.Close()
 	defer client.Close()
 
-	go handleConn(ctx, srv, time.Millisecond*50)
+	s := NewSimulatedTemperatureServer(nil)
+	go s.handleConn(ctx, srv, time.Millisecond*50)
 
 	var buf bytes.Buffer
 
@@ -87,8 +81,10 @@ func TestHandleConn(t *testing.T) {
 	if !(len(results) > 1) {
 		t.Errorf("Not enough results: %q", len(results))
 	}
-	if !strings.Contains(results[0], "{time: ") {
-		t.Errorf("First result doesn't contain '{time: . Result: %q", results[0])
+	var reading Reading
+	err = json.Unmarshal([]byte(results[0]), &reading)
+	if err != nil {
+		t.Errorf("First result doesn't unmarshal to a reading: . Result: %q", results[0])
 	}
 
 	t.Logf("results: %q", results)

@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"math/rand/v2"
 	"net"
 	"os"
@@ -12,31 +12,80 @@ import (
 	"log"
 )
 
+type Reading struct {
+	Time int64 `json:"time"`
+	Temperature float64 `json:"temp"`
+}
+
+type TemperatureService interface {
+	GetReading() Reading
+}
+
+type TemperatureServer struct {
+	Listener net.Listener
+	service TemperatureService
+}
+
+func (t *TemperatureServer) GetReading() Reading{
+	return Reading{}
+}
+
+type SimulatedTemperatureService struct {
+	RecentReadings []Reading
+}
+
+func NewSimulatedTemperatureServer(ln net.Listener) *TemperatureServer {
+	return &TemperatureServer{
+		Listener: ln,
+		service: &SimulatedTemperatureService{
+			RecentReadings: nil,
+			},
+		}
+}
+
+func(t *SimulatedTemperatureService) GetReading() Reading {
+	var temp float64
+	if len(t.RecentReadings) == 0 {
+		temp = SimulateTempReading()
+		reading := Reading{
+			Time: time.Now().Unix(),
+			Temperature: temp,
+		}
+		t.RecentReadings = append(t.RecentReadings, reading)
+		return reading
+	}
+	if len(t.RecentReadings) > 5 {
+		t.RecentReadings = t.RecentReadings[1:]
+	}
+	temp = t.RecentReadings[len(t.RecentReadings)-1].Temperature + (rand.Float64() - 0.5)
+	reading := Reading{
+		Time: time.Now().Unix(),
+		Temperature: temp,
+	}
+	t.RecentReadings = append(t.RecentReadings, reading)
+	return reading
+}
 func SimulateTempReading() float64 {
 	rand_reading := rand.Float64()
 	// We want the range -10 to 30
 	return (rand_reading * 40) - 10
 }
 
-func CreatePayload(instant time.Time, reading float64) string {
-	return fmt.Sprintf("{time: %d, temp: %.2f}\n", instant.Unix(), reading)
-}
-
-func Serve(ctx context.Context, ln net.Listener) error {
+func (s *TemperatureServer) Serve(ctx context.Context) error {
 	for {
-		conn, err := ln.Accept()
+		conn, err := s.Listener.Accept()
 		if err != nil {
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
 			continue
 		}
-		go handleConn(ctx, conn, time.Second*5)
+		go s.handleConn(ctx, conn, time.Second*5)
 
 	}
 }
   
-func handleConn(ctx context.Context, c net.Conn, interval time.Duration) {
+func (s *TemperatureServer) handleConn(ctx context.Context, c net.Conn, interval time.Duration) {
 	defer c.Close()
 
 	ticker := time.NewTicker(interval)
@@ -47,9 +96,9 @@ func handleConn(ctx context.Context, c net.Conn, interval time.Duration) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			reading := SimulateTempReading()
-			payload := CreatePayload(time.Now(), reading)
-			c.Write([]byte(payload))
+			reading := s.service.GetReading()
+			enc := json.NewEncoder(c)
+			_ = enc.Encode(reading)
 		}
 	}
 }
@@ -57,7 +106,7 @@ func handleConn(ctx context.Context, c net.Conn, interval time.Duration) {
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-	socketFile := "/var/run/temp_s.sock"
+	socketFile := "/tmp/temp_s.sock"
 
 	os.Remove(socketFile)
 	ln, err := net.Listen("unix", socketFile); 
@@ -65,10 +114,10 @@ func main() {
 		log.Fatalf("Could not listen on socket file %s: %s", socketFile, err)
 	}
 	
-	err = Serve(ctx, ln)
+	s := NewSimulatedTemperatureServer(ln)
+	err = s.Serve(ctx)
 	if err != nil{
 		log.Fatalf("Failed to Serve: %s", err)
 	}
-
 
 }
