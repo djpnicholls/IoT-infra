@@ -110,14 +110,16 @@ func (s *TemperatureServer) handleConn(ctx context.Context, c net.Conn, interval
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+	
 	socketFile := "/tmp/temp_s.sock"
-
 	os.Remove(socketFile)
+	log.Printf("Opening socket file %s", socketFile)
 	ln, err := net.Listen("unix", socketFile); 
 	if err != nil{
 		log.Fatalf("Could not listen on socket file %s: %s", socketFile, err)
 	}
 	
+	log.Print("Now serving...")
 	s := NewSimulatedTemperatureServer(ln)
 	err = s.Serve(ctx)
 	if err != nil{
