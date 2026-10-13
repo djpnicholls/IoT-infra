@@ -72,6 +72,10 @@ func SimulateTempReading() float64 {
 }
 
 func (s *TemperatureServer) Serve(ctx context.Context) error {
+	go func(){
+		<-ctx.Done()
+		_ = s.Listener.Close()
+	}()
 	for {
 		conn, err := s.Listener.Accept()
 		if err != nil {
