@@ -118,11 +118,13 @@ func main() {
 	if err != nil{
 		log.Fatalf("Could not listen on socket file %s: %s", socketFile, err)
 	}
+	if err = os.Chmod(socketFile, 0660); err != nil{
+		log.Fatalf("Could not make socket group-writeable: %s", err)
+	}
 	
 	log.Print("Now serving...")
 	s := NewSimulatedTemperatureServer(ln)
-	err = s.Serve(ctx)
-	if err != nil{
+	if err = s.Serve(ctx); err != nil{
 		log.Fatalf("Failed to Serve: %s", err)
 	}
 
