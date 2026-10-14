@@ -1,0 +1,30 @@
+- name: Set up OS
+  hosts: embedded
+  remote_user: root
+
+  tasks:
+    - name: Copy temp-sim
+      ansible.builtin.copy:
+        src: ../dist/tempsim
+        dest: /usr/local/bin/temp-sim
+
+    - name: Copy unit files
+      ansible.builtin.copy:
+        src: ../systemd/unitFiles/
+        dest: /etc/systemd/system
+
+    - name: Copy sysusers files
+      ansible.builtin.copy:
+        src: ../systemd/sysusers/
+        dest: /etc/sysusers.d/
+
+    - name: Apply sysusers files
+      ansible.builtin.command:
+        cmd: systemd-sysusers
+
+    - name: Enable temp-sim socket
+      ansible.builtin.systemd_service:
+        name: temperature-simulator.socket
+        enabled: true
+        daemon_reload: true
+        started: true
