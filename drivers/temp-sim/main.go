@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"math/rand/v2"
 	"net"
 	"os"
+	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
-	"os/signal"
-	"log"
 )
 
 type Reading struct {
@@ -110,18 +111,26 @@ func (s *TemperatureServer) handleConn(ctx context.Context, c net.Conn, interval
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	var ln net.Listener
+	var err error
 	
-	socketFile := "/tmp/temp_s.sock"
-	os.Remove(socketFile)
-	log.Printf("Opening socket file %s", socketFile)
-	ln, err := net.Listen("unix", socketFile); 
-	if err != nil{
-		log.Fatalf("Could not listen on socket file %s: %s", socketFile, err)
+	if os.Getenv("LISTEN_PID") == strconv.Itoa(os.Getpid()){
+		log.Println("Running under systemd")
+		socketFile := os.NewFile(3, "systemd-socket")
+		ln, err = net.FileListener(socketFile)
+	} else {
+		socketFile := "/tmp/temp_s.sock"
+		os.Remove(socketFile)
+		log.Printf("Opening socket file %s", socketFile)
+		ln, err = net.Listen("unix", socketFile); 
+		if err != nil{
+			log.Fatalf("Could not listen on socket file %s: %s", socketFile, err)
+		}
+		if err = os.Chmod(socketFile, 0660); err != nil{
+			log.Fatalf("Could not make socket group-writeable: %s", err)
+		}
 	}
-	if err = os.Chmod(socketFile, 0660); err != nil{
-		log.Fatalf("Could not make socket group-writeable: %s", err)
-	}
-	
 	log.Print("Now serving...")
 	s := NewSimulatedTemperatureServer(ln)
 	if err = s.Serve(ctx); err != nil{

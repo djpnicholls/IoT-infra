@@ -1,14 +1,10 @@
 [Unit]
 Description=Simulates reading temperatures from a thermometer and exposes these readings on a Unix socket
-After=network.target
 
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/temp-sim
-User=drivers
+User=tempsim
 Group=applications
 Restart=always
 StartLimitAction=reboot
-
-[Install]
-WantedBy=multiuser.target

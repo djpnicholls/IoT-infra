@@ -1,0 +1,13 @@
+[Unit]
+Description=Socket for temperature simulator
+
+[Socket]
+ListenStream=/run/temp_sim/temp_s.sock
+SocketUser=tempsim
+SocketGroup=applications
+SocketMode=0770
+DirectoryMode=0755
+FileDescriptorName="systemd-socket"
+
+[Install]
+WantedBy=sockets.target
