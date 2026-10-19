@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"log"
-	"math/rand/v2"
 	"net"
 	"os"
 	"os/signal"
@@ -13,66 +12,21 @@ import (
 	"time"
 )
 
-type Reading struct {
-	Time int64 `json:"time"`
-	Temperature float64 `json:"temp"`
+type Reading interface {
+	Timestamp() int64
+	Value() float64
 }
 
-type TemperatureService interface {
+type MeasurementService interface {
 	GetReading() Reading
 }
 
-type TemperatureServer struct {
+type MeasurementServer struct {
 	Listener net.Listener
-	service TemperatureService
+	service MeasurementService
 }
 
-func (t *TemperatureServer) GetReading() Reading{
-	return Reading{}
-}
-
-type SimulatedTemperatureService struct {
-	RecentReadings []Reading
-}
-
-func NewSimulatedTemperatureServer(ln net.Listener) *TemperatureServer {
-	return &TemperatureServer{
-		Listener: ln,
-		service: &SimulatedTemperatureService{
-			RecentReadings: nil,
-			},
-		}
-}
-
-func(t *SimulatedTemperatureService) GetReading() Reading {
-	var temp float64
-	if len(t.RecentReadings) == 0 {
-		temp = SimulateTempReading()
-		reading := Reading{
-			Time: time.Now().Unix(),
-			Temperature: temp,
-		}
-		t.RecentReadings = append(t.RecentReadings, reading)
-		return reading
-	}
-	if len(t.RecentReadings) > 5 {
-		t.RecentReadings = t.RecentReadings[1:]
-	}
-	temp = t.RecentReadings[len(t.RecentReadings)-1].Temperature + (rand.Float64() - 0.5)
-	reading := Reading{
-		Time: time.Now().Unix(),
-		Temperature: temp,
-	}
-	t.RecentReadings = append(t.RecentReadings, reading)
-	return reading
-}
-func SimulateTempReading() float64 {
-	rand_reading := rand.Float64()
-	// We want the range -10 to 30
-	return (rand_reading * 40) - 10
-}
-
-func (s *TemperatureServer) Serve(ctx context.Context) error {
+func (s *MeasurementServer) Serve(ctx context.Context) error {
 	go func(){
 		<-ctx.Done()
 		_ = s.Listener.Close()
@@ -90,7 +44,7 @@ func (s *TemperatureServer) Serve(ctx context.Context) error {
 	}
 }
   
-func (s *TemperatureServer) handleConn(ctx context.Context, c net.Conn, interval time.Duration) {
+func (s *MeasurementServer) handleConn(ctx context.Context, c net.Conn, interval time.Duration) {
 	defer c.Close()
 
 	ticker := time.NewTicker(interval)

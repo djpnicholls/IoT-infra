@@ -17,20 +17,27 @@ func TestSimulatedTemperatureServer(t *testing.T) {
 	s := NewSimulatedTemperatureServer(nil)
 	var readings []Reading
 	for range 100 {
-		readings = append(readings, s.GetReading())
+		readings = append(readings, s.service.GetReading())
 	}
 	if len(readings) != 100 {
 		t.Errorf("Only got %d readings", len(readings))
 	}
+	var unchanged int
 	for i := range readings{
 		if i == 0{
 			continue
 		}
-		current := readings[i].Temperature
-		last := readings[i].Temperature
+		current := readings[i].Value()
+		last := readings[i - 1].Value()
 		if math.Abs(current - last) > 0.5 {
 			t.Errorf("Reading not within half a degree of the last reading.  Current: %g, Last: %g", current, last)
 		}
+		if current == last {
+			unchanged ++
+		}
+	}
+	if unchanged > 5 {
+		t.Errorf("There were %d cases where the current reading matched the previous", unchanged)
 	}
 }
 
@@ -81,7 +88,7 @@ func TestHandleConn(t *testing.T) {
 	if !(len(results) > 1) {
 		t.Errorf("Not enough results: %q", len(results))
 	}
-	var reading Reading
+	var reading TemperatureReading
 	err = json.Unmarshal([]byte(results[0]), &reading)
 	if err != nil {
 		t.Errorf("First result doesn't unmarshal to a reading: . Result: %q", results[0])
