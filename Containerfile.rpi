@@ -1,0 +1,28 @@
+FROM docker.io/balenalib/rpi-debian:bullseye
+
+RUN apt-get update && \
+	apt-get install -y --no-install-recommends systemd systemd-sysv && \
+	apt-get clean && \
+	rm -rf /var/lib/apt/lists/*
+	
+ENV container=docker
+
+CMD ["/lib/systemd/systemd"]
+
+# Can put all the setup in here, and then export the filesystem to install on RPi B
+#
+# build with:
+# podman build --platform linux/arm/v6 -t local/pi-b-rootfs .
+#
+# run with (for attaching to for testing):
+# podman run -d --name pi-build-env \
+# --platform linux/arm/v6
+# --systemd=always --security-opt label=disable \
+# localhost/local/pi-b-rootfs
+#
+# Create with (ready for export, doesn't run code):
+# podman create --name pi-export-temp localhost/local/pi-b-rootfs
+#
+# Export with:
+# podman export pi-export-temp -o pi-rootfs.tar
+
