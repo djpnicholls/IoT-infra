@@ -44,7 +44,6 @@ func NewTestMeasurementServer(testReadings []TestReading) *MeasurementServer {
 	}
 }
 
-
 func TestHandleConn(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -68,47 +67,51 @@ func TestHandleConn(t *testing.T) {
 	})
 	go s.handleConn(ctx, srv, time.Millisecond*50)
 
-	var buf bytes.Buffer
+	t.Run("serves measurement data", func(t *testing.T) {
+		var buf bytes.Buffer
 
-	client.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
-	_, err := io.Copy(&buf, client)
-	if err != nil {
-		var netErr net.Error
-		if errors.As(err, &netErr) && netErr.Timeout() {
-			t.Logf("timed out waiting for data: %v", err)
-		} else {
-			t.Errorf("error: %v", err)
+		client.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+		_, err := io.Copy(&buf, client)
+		if err != nil {
+			var netErr net.Error
+			if errors.As(err, &netErr) && netErr.Timeout() {
+				t.Logf("timed out waiting for data: %v", err)
+			} else {
+				t.Errorf("error: %v", err)
+			}
 		}
-	}
 
-	results := strings.Split(buf.String(), "\n")
-	if !(len(results) > 1) {
-		t.Errorf("Not enough results: %q", len(results))
-	}
-	var reading TestReading
-	err = json.Unmarshal([]byte(results[0]), &reading)
-	if err != nil {
-		t.Errorf("First result doesn't unmarshal to a reading: . Result: %q", results[0])
-	}
-
-	t.Logf("results: %q", results)
-	
-
-	client.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
-	cancel()
-
-	var newBuf bytes.Buffer
-	_, err = io.Copy(&newBuf, client)
-	if err != nil {
-		var netErr net.Error
-		if errors.As(err, &netErr) && netErr.Timeout() {
-			t.Logf("timed out waiting for data: %v", err)
-		} else {
-			t.Errorf("error: %v", err)
+		results := strings.Split(buf.String(), "\n")
+		if !(len(results) > 1) {
+			t.Errorf("Not enough results: %q", len(results))
 		}
-	}
-	if "" != newBuf.String() {
-		t.Errorf("Context not closed properly.  Received results: %q", newBuf.String())
-	}
+		var reading TestReading
+		err = json.Unmarshal([]byte(results[0]), &reading)
+		if err != nil {
+			t.Errorf("First result doesn't unmarshal to a reading: . Result: %q", results[0])
+		}
+
+		t.Logf("results: %q", results)
+	})
+
+	t.Run("Context cancels", func(t *testing.T) {
+
+		client.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+		cancel()
+
+		var newBuf bytes.Buffer
+		_, err := io.Copy(&newBuf, client)
+		if err != nil {
+			var netErr net.Error
+			if errors.As(err, &netErr) && netErr.Timeout() {
+				t.Logf("timed out waiting for data: %v", err)
+			} else {
+				t.Errorf("error: %v", err)
+			}
+		}
+		if "" != newBuf.String() {
+			t.Errorf("Context not closed properly.  Received results: %q", newBuf.String())
+		}
+	})
 
 }

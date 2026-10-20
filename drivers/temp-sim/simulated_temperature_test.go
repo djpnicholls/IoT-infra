@@ -1,10 +1,9 @@
 package main
 
 import (
-	"testing"
 	"math"
+	"testing"
 )
-
 
 func TestSimulatedTemperatureServer(t *testing.T) {
 	s := NewSimulatedTemperatureServer(nil)
@@ -16,17 +15,17 @@ func TestSimulatedTemperatureServer(t *testing.T) {
 		t.Errorf("Only got %d readings", len(readings))
 	}
 	var unchanged int
-	for i := range readings{
-		if i == 0{
+	for i := range readings {
+		if i == 0 {
 			continue
 		}
 		current := readings[i].Value()
-		last := readings[i - 1].Value()
-		if math.Abs(current - last) > 0.5 {
+		last := readings[i-1].Value()
+		if math.Abs(current-last) > 0.5 {
 			t.Errorf("Reading not within half a degree of the last reading.  Current: %g, Last: %g", current, last)
 		}
 		if current == last {
-			unchanged ++
+			unchanged++
 		}
 	}
 	if unchanged > 5 {

@@ -23,11 +23,11 @@ type MeasurementService interface {
 
 type MeasurementServer struct {
 	Listener net.Listener
-	service MeasurementService
+	service  MeasurementService
 }
 
 func (s *MeasurementServer) Serve(ctx context.Context) error {
-	go func(){
+	go func() {
 		<-ctx.Done()
 		_ = s.Listener.Close()
 	}()
@@ -43,7 +43,7 @@ func (s *MeasurementServer) Serve(ctx context.Context) error {
 
 	}
 }
-  
+
 func (s *MeasurementServer) handleConn(ctx context.Context, c net.Conn, interval time.Duration) {
 	defer c.Close()
 
@@ -62,8 +62,8 @@ func (s *MeasurementServer) handleConn(ctx context.Context, c net.Conn, interval
 	}
 }
 
-func GetListener() (net.Listener, error){
-	if os.Getenv("LISTEN_PID") == strconv.Itoa(os.Getpid()){
+func GetListener() (net.Listener, error) {
+	if os.Getenv("LISTEN_PID") == strconv.Itoa(os.Getpid()) {
 		log.Println("Running under systemd")
 		socketFile := os.NewFile(3, "systemd-socket")
 		return net.FileListener(socketFile)
@@ -71,7 +71,7 @@ func GetListener() (net.Listener, error){
 		socketFile := "/tmp/temp_s.sock"
 		os.Remove(socketFile)
 		log.Printf("Opening socket file %s", socketFile)
-		return net.Listen("unix", socketFile); 
+		return net.Listen("unix", socketFile)
 	}
 }
 
@@ -83,10 +83,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error listening on socket: %s", err)
 	}
-	
+
 	log.Print("Now serving...")
 	s := NewSimulatedTemperatureServer(ln)
-	if err = s.Serve(ctx); err != nil{
+	if err = s.Serve(ctx); err != nil {
 		log.Fatalf("Failed to Serve: %s", err)
 	}
 
