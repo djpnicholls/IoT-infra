@@ -35,6 +35,15 @@ func (s *TestMeasurementService) SetReadings(readings []TestReading) {
 		s.Readings = append(s.Readings, reading)
 	}
 }
+func NewTestMeasurementServer(testReadings []TestReading) *MeasurementServer {
+	testService := &TestMeasurementService{}
+	testService.SetReadings(testReadings)
+	return &MeasurementServer{
+		Listener: nil,
+		service:  testService,
+	}
+}
+
 
 func TestHandleConn(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -43,7 +52,7 @@ func TestHandleConn(t *testing.T) {
 	srv, client := net.Pipe()
 	defer srv.Close()
 	defer client.Close()
-	testReadings := []TestReading{
+	s := NewTestMeasurementServer([]TestReading{
 		{Time: 1,
 			TestVal: 0.1},
 		{Time: 2,
@@ -56,19 +65,12 @@ func TestHandleConn(t *testing.T) {
 			TestVal: 0.5},
 		{Time: 6,
 			TestVal: 0.6},
-	}
-	testService := &TestMeasurementService{}
-	testService.SetReadings(testReadings)
-
-	s := &MeasurementServer{
-		Listener: nil,
-		service:  testService,
-	}
+	})
 	go s.handleConn(ctx, srv, time.Millisecond*50)
 
 	var buf bytes.Buffer
 
-	client.SetReadDeadline(time.Now().Add(250 * time.Millisecond))
+	client.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
 	_, err := io.Copy(&buf, client)
 	if err != nil {
 		var netErr net.Error
@@ -90,5 +92,23 @@ func TestHandleConn(t *testing.T) {
 	}
 
 	t.Logf("results: %q", results)
+	
+
+	client.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+	cancel()
+
+	var newBuf bytes.Buffer
+	_, err = io.Copy(&newBuf, client)
+	if err != nil {
+		var netErr net.Error
+		if errors.As(err, &netErr) && netErr.Timeout() {
+			t.Logf("timed out waiting for data: %v", err)
+		} else {
+			t.Errorf("error: %v", err)
+		}
+	}
+	if "" != newBuf.String() {
+		t.Errorf("Context not closed properly.  Received results: %q", newBuf.String())
+	}
 
 }
