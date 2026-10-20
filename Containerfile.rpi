@@ -1,7 +1,7 @@
 FROM docker.io/balenalib/rpi-debian:bullseye
 
 RUN apt-get update && \
-	apt-get install -y --no-install-recommends systemd systemd-sysv && \
+	apt-get install -y --no-install-recommends systemd systemd-sysv python3-minimal python3-apt && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
 	
