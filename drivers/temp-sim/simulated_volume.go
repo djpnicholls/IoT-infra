@@ -40,7 +40,7 @@ func (v *SimulatedVolumeService) GetReading() Reading {
 				delta += 30
 			}
 		}
-		vol += delta
+		vol = last + delta
 		log.Printf("Altering volume by %f:  %f", delta, vol)
 	}
 	reading := VolumeReading{
