@@ -21,14 +21,9 @@ func (t *SimulatedTemperatureService) GetReading() Reading {
 	var temp float64
 	if t.LastReading == nil {
 		temp = SimulateInitialTempReading()
-		reading := TemperatureReading{
-			Time:        time.Now().Unix(),
-			Temperature: temp,
-		}
-		t.LastReading = reading
-		return reading
+	} else {
+		temp = t.LastReading.Value() + (rand.Float64() - 0.5)
 	}
-	temp = t.LastReading.Value() + (rand.Float64() - 0.5)
 	reading := TemperatureReading{
 		Time:        time.Now().Unix(),
 		Temperature: temp,
