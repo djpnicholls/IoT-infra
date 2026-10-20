@@ -5,8 +5,8 @@
   tasks:
     - name: Copy temp-sim
       ansible.builtin.copy:
-        src: ../dist/tempsim
-        dest: /usr/local/bin/temp-sim
+        src: ../dist/measurement
+        dest: /usr/local/bin/measurement
 
     - name: Copy unit files
       ansible.builtin.copy:

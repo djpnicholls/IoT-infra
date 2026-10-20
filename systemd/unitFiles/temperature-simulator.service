@@ -3,7 +3,7 @@ Description=Simulates reading temperatures from a thermometer and exposes these 
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/temp-sim
+ExecStart=/usr/local/bin/measurement
 Environment="MEASUREMENT_SOURCE=temp"
 DynamicUser=true
 Restart=always
