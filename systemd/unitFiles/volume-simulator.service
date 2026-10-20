@@ -5,6 +5,7 @@ Description=Simulates reading volume levels and exposes these readings on a Unix
 Type=simple
 ExecStart=/usr/local/bin/measurement
 Environment="MEASUREMENT_SOURCE=volume"
-DynamicUser=true
+# Set to true for running outwith the container
+DynamicUser=false
 Restart=always
-StartLimitAction=reboot
+StartLimitAction=none

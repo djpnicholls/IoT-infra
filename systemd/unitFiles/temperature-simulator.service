@@ -5,6 +5,7 @@ Description=Simulates reading temperatures from a thermometer and exposes these 
 Type=simple
 ExecStart=/usr/local/bin/measurement
 Environment="MEASUREMENT_SOURCE=temp"
-DynamicUser=true
+# Set to true outwith container
+DynamicUser=false
 Restart=always
-StartLimitAction=reboot
+StartLimitAction=none
