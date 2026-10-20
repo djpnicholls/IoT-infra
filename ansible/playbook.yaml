@@ -26,21 +26,20 @@
         src: ../systemd/unitFiles/
         dest: /etc/systemd/system
 
-    - name: Copy sysusers files
-      ansible.builtin.copy:
-        src: ../systemd/sysusers/
-        dest: /etc/sysusers.d/
-
-    - name: Apply sysusers files
-      ansible.builtin.command:
-        cmd: systemd-sysusers
-
-    - name: Enable temp-sim socket
+    - name: Enable temperature simulator socket
       ansible.builtin.systemd_service:
         name: temperature-simulator.socket
         enabled: true
         daemon_reload: true
         state: started
+
+    - name: Enable volume simulator socket
+      ansible.builtin.systemd_service:
+        name: volume-simulator.socket
+        enabled: true
+        daemon_reload: true
+        state: started
+
         
   post_tasks:
     - name: Remove Python

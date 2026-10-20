@@ -1,0 +1,10 @@
+[Unit]
+Description=Simulates reading volume levels and exposes these readings on a Unix socket
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/temp-sim
+Environment="MEASUREMENT_SOURCE=volume"
+DynamicUser=true
+Restart=always
+StartLimitAction=reboot
