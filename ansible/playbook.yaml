@@ -7,6 +7,7 @@
       ansible.builtin.copy:
         src: ../dist/measurement
         dest: /usr/local/bin/measurement
+        mode: "preserve"
 
     - name: Copy unit files
       ansible.builtin.copy:
