@@ -75,6 +75,19 @@ func GetListener() (net.Listener, error) {
 	}
 }
 
+func NewServer(ln net.Listener) *MeasurementServer {
+	measurementSource := os.Getenv("MEASUREMENT_SOURCE")
+	switch measurementSource {
+	case "volume":
+		return NewSimulatedVolumeServer(ln)
+	case "temp":
+		return NewSimulatedTemperatureServer(ln)
+	default:
+		log.Fatalf("Unrecognised measurement source: %q", measurementSource)
+	}
+	return nil
+}
+
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -85,7 +98,7 @@ func main() {
 	}
 
 	log.Print("Now serving...")
-	s := NewSimulatedTemperatureServer(ln)
+	s := NewServer(ln)
 	if err = s.Serve(ctx); err != nil {
 		log.Fatalf("Failed to Serve: %s", err)
 	}
