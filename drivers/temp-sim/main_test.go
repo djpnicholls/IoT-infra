@@ -13,15 +13,15 @@ import (
 )
 
 type TestReading struct {
-	Time    int64   `json:"time"`
+	Time int64 `json:"time"`
 	TestVal float64 `json:"value"`
 }
 
-func (r TestReading) Value() float64   { return r.TestVal }
+func (r TestReading) Value() float64 { return r.TestVal }
 func (r TestReading) Timestamp() int64 { return r.Time }
 
 type TestMeasurementService struct {
-	Calls    int
+	Calls int
 	Readings []Reading
 }
 
@@ -35,12 +35,13 @@ func (s *TestMeasurementService) SetReadings(readings []TestReading) {
 		s.Readings = append(s.Readings, reading)
 	}
 }
+
 func NewTestMeasurementServer(testReadings []TestReading) *MeasurementServer {
 	testService := &TestMeasurementService{}
 	testService.SetReadings(testReadings)
 	return &MeasurementServer{
 		Listener: nil,
-		service:  testService,
+		service: testService,
 	}
 }
 
@@ -51,6 +52,7 @@ func TestHandleConn(t *testing.T) {
 	srv, client := net.Pipe()
 	defer srv.Close()
 	defer client.Close()
+
 	s := NewTestMeasurementServer([]TestReading{
 		{Time: 1,
 			TestVal: 0.1},
@@ -65,11 +67,12 @@ func TestHandleConn(t *testing.T) {
 		{Time: 6,
 			TestVal: 0.6},
 	})
-	go s.handleConn(ctx, srv, time.Millisecond*50)
+
+	done := make(chan struct{})
+	go func() {defer close(done); s.handleConn(ctx, srv, time.Millisecond*50)}()
 
 	t.Run("serves measurement data", func(t *testing.T) {
 		var buf bytes.Buffer
-
 		client.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
 		_, err := io.Copy(&buf, client)
 		if err != nil {
@@ -85,17 +88,16 @@ func TestHandleConn(t *testing.T) {
 		if !(len(results) > 1) {
 			t.Errorf("Not enough results: %q", len(results))
 		}
+
 		var reading TestReading
 		err = json.Unmarshal([]byte(results[0]), &reading)
 		if err != nil {
 			t.Errorf("First result doesn't unmarshal to a reading: . Result: %q", results[0])
 		}
-
 		t.Logf("results: %q", results)
 	})
 
 	t.Run("Context cancels", func(t *testing.T) {
-
 		client.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
 		cancel()
 
@@ -109,9 +111,10 @@ func TestHandleConn(t *testing.T) {
 				t.Errorf("error: %v", err)
 			}
 		}
-		if "" != newBuf.String() {
-			t.Errorf("Context not closed properly.  Received results: %q", newBuf.String())
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("handleConn did not return after cancel")
 		}
 	})
-
 }

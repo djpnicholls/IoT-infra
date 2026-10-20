@@ -33,10 +33,10 @@ func TestSimulatedTemperatureServer(t *testing.T) {
 	}
 }
 
-func TestSimulateTempReading(t *testing.T) {
+func TestSimulateInitialTempReading(t *testing.T) {
 	var results []float64
 	for range 100 {
-		results = append(results, SimulateTempReading())
+		results = append(results, SimulateInitialTempReading())
 	}
 	var in0to1 int
 	for _, r := range results {
