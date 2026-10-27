@@ -66,6 +66,35 @@ func TestNewConfig(t *testing.T) {
 				}
 			},
 		},
+		{
+			"Invalid listener",
+			"temp",
+			"unknown",
+			":8080",
+			MeasurementConfig{},
+			func(t *testing.T, err error) {
+				var target UnknownListenerTypeError
+				if !errors.As(err, &target) {
+					t.Errorf("expected UnknownListenerTypeError, got: %T (%v)", err, err)
+				}
+				if target.LType != "unknown" {
+					t.Errorf("expected embedded listener type to be 'unknown', got %q", target.LType)
+				}
+			},
+		},
+		{
+			"Missing listener",
+			"temp",
+			"tcp",
+			"",
+			MeasurementConfig{},
+			func(t *testing.T, err error) {
+				var target MissingListenerAddressError
+				if !errors.As(err, &target) {
+					t.Errorf("expected MissingListenerAddressError got: %T (%v)", err, err)
+				}
+			},
+		},
 	}
 
 	for _, ct := range configTests {

@@ -10,9 +10,20 @@ import (
 type UnknownSourceError struct {
 	Source string
 }
-
 func (e UnknownSourceError) Error() string {
 	return fmt.Sprintf("Unrecognised measurement source: %q", e.Source)
+}
+
+type UnknownListenerTypeError struct {
+	LType string
+}
+func (e UnknownListenerTypeError) Error() string {
+	return fmt.Sprintf("Unrecognised listener type: %q", e.LType)
+}
+
+type MissingListenerAddressError struct {}
+func (e MissingListenerAddressError) Error() string {
+	return "Missing listener address. Set LISTEN_PID or MEASUREMENT_LISTENER_ADDRESS"
 }
 
 type MeasurementSource int
@@ -43,6 +54,7 @@ func (lt ListenerType) String() string {
 	return ListenerTypeName[lt]
 
 }
+
 type MeasurementConfig struct {
 	ListenerType 	  ListenerType
 	ListenerAddr 	  string
@@ -92,14 +104,12 @@ func getListenerConfig() (ListenerType, string, error) {
 		case "tcp":
 			t = ListenerTcp
 		default:
-			err := fmt.Errorf("Unrecognised listener type: %q", listenerType)
-			return 0, "", err
+			return 0, "", UnknownListenerTypeError{LType: listenerType}
 		}
 		
 		a = os.Getenv("MEASUREMENT_LISTENER_ADDRESS")
 		if a == "" {
-			err := fmt.Errorf("Missing listener type.  Set LISTEN_PID or MEASUREMENT_LISTENER_ADDRESS")
-			return 0, "", err
+			return 0, "", MissingListenerAddressError{}
 		}
 	}
 	return t, a, nil
