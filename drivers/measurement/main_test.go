@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -115,6 +116,48 @@ func TestHandleConn(t *testing.T) {
 		case <-done:
 		case <-time.After(time.Second):
 			t.Fatal("handleConn did not return after cancel")
+		}
+	})
+}
+
+func TestGetListener(t *testing.T){
+	tempdir := t.TempDir()
+	unixAddr := filepath.Join(tempdir, "test.sock")
+
+	t.Run("unix", func(t *testing.T) {
+		cfg := MeasurementConfig{
+			ListenerType: ListenerUnix,
+			ListenerAddr: unixAddr,
+		}
+		ln, err := GetListener(cfg)
+		if err != nil {
+			t.Fatalf("Error setting up listener: %v", err)
+		}
+		defer ln.Close()
+		if _, ok := ln.(*net.UnixListener); !ok {
+			t.Errorf("Expected unix listener, got %T", ln)
+		}
+		if ln.Addr().String() != unixAddr {
+			t.Errorf("Unexpected listener address.  Expected: %v, got %v", unixAddr, ln.Addr().String())
+		}
+
+	})
+	t.Run("tcp", func(t *testing.T) {
+		cfg := MeasurementConfig{
+			ListenerType: ListenerTcp,
+			ListenerAddr: "127.0.0.1:0",
+		}
+		ln, err := GetListener(cfg)
+		if err != nil {
+			t.Fatalf("Error setting up listener: %v", err)
+		}
+		defer ln.Close()
+		if _, ok := ln.(*net.TCPListener); !ok {
+			t.Errorf("Expected tcp listener, got %T", ln)
+		}
+		ip, port, _ := strings.Cut(ln.Addr().String(), ":")
+		if ip != "127.0.0.1" {
+			t.Errorf("Unexpected listener address.  Expected next open port on IP 127.0.0.1, got %v:%v", ip, port)
 		}
 	})
 }

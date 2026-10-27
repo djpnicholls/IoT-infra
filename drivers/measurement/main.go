@@ -71,7 +71,7 @@ func GetListener(cfg MeasurementConfig) (net.Listener, error) {
 			os.Remove(cfg.ListenerAddr)
 		}
 		log.Printf("Creating %s listener on %s", cfg.ListenerType, cfg.ListenerAddr)
-		return net.Listen("unix", cfg.ListenerAddr)
+		return net.Listen(cfg.ListenerType.String(), cfg.ListenerAddr)
 	}
 }
 
