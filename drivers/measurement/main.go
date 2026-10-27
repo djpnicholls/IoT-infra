@@ -7,7 +7,6 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 )
@@ -62,28 +61,28 @@ func (s *MeasurementServer) handleConn(ctx context.Context, c net.Conn, interval
 	}
 }
 
-func GetListener() (net.Listener, error) {
-	if os.Getenv("LISTEN_PID") == strconv.Itoa(os.Getpid()) {
+func GetListener(cfg MeasurementConfig) (net.Listener, error) {
+	if cfg.ListenerType == ListenerSystemd {
 		log.Println("Running under systemd")
-		socketFile := os.NewFile(3, "systemd-socket")
+		socketFile := os.NewFile(3, cfg.ListenerAddr)
 		return net.FileListener(socketFile)
 	} else {
-		socketFile := "/tmp/temp_s.sock"
-		os.Remove(socketFile)
-		log.Printf("Opening socket file %s", socketFile)
-		return net.Listen("unix", socketFile)
+		if cfg.ListenerType == ListenerUnix {
+			os.Remove(cfg.ListenerAddr)
+		}
+		log.Printf("Creating %s listener on %s", cfg.ListenerType, cfg.ListenerAddr)
+		return net.Listen("unix", cfg.ListenerAddr)
 	}
 }
 
-func NewServer(ln net.Listener) *MeasurementServer {
-	measurementSource := os.Getenv("MEASUREMENT_SOURCE")
-	switch measurementSource {
-	case "volume":
+func NewServer(cfg MeasurementConfig, ln net.Listener) *MeasurementServer {
+	switch cfg.MeasurementSource {
+	case SourceVolume:
 		return NewSimulatedVolumeServer(ln)
-	case "temp":
+	case SourceTemp :
 		return NewSimulatedTemperatureServer(ln)
 	default:
-		log.Fatalf("Unrecognised measurement source: %q", measurementSource)
+		log.Fatalf("Missing measurement source: %q", cfg.MeasurementSource)
 	}
 	return nil
 }
@@ -91,14 +90,18 @@ func NewServer(ln net.Listener) *MeasurementServer {
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+	cfg, err := NewConfig()
+	if err != nil {
+		log.Fatalf("Error marshalling config: %s", err)
+	}
 
-	ln, err := GetListener()
+	ln, err := GetListener(cfg)
 	if err != nil {
 		log.Fatalf("Error listening on socket: %s", err)
 	}
 
 	log.Print("Now serving...")
-	s := NewServer(ln)
+	s := NewServer(cfg, ln)
 	if err = s.Serve(ctx); err != nil {
 		log.Fatalf("Failed to Serve: %s", err)
 	}
