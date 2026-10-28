@@ -1,0 +1,9 @@
+FROM debian:trixie-slim
+
+WORKDIR app
+
+COPY dist/measurement_x86 .
+
+ENV MEASUREMENT_LISTENER_TYPE="tcp" MEASUREMENT_LISTENER_ADDRESS="127.0.0.1:8090"
+
+ENTRYPOINT ["/app/measurement_x86"]
