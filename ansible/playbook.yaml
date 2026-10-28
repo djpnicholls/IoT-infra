@@ -5,7 +5,7 @@
   tasks:
     - name: Copy temp-sim
       ansible.builtin.copy:
-        src: ../dist/measurement
+        src: ../dist/measurement_arm_v6
         dest: /usr/local/bin/measurement
         mode: "preserve"
 

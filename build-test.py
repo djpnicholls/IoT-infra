@@ -5,7 +5,7 @@ import os
 import socket
 
 print("Building measurement application...")
-subprocess.run(["go", "build", "-o", "../../dist", "."], 
+subprocess.run(["go", "build", "-o", "../../dist/measurement_arm_v6", "."], 
 	check=True,
 	cwd="drivers/measurement",
 	env={"GOARCH": "arm", "GOARM": "6", "HOME": os.environ.get("HOME")})
