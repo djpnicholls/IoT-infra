@@ -87,7 +87,7 @@ func TestHandleConn(t *testing.T) {
 
 		results := strings.Split(buf.String(), "\n")
 		if !(len(results) > 1) {
-			t.Errorf("Not enough results: %q", len(results))
+			t.Errorf("Not enough results: %d", len(results))
 		}
 
 		var reading TestReading
