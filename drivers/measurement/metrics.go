@@ -11,20 +11,22 @@ type Probe interface{
 	GetMetricDesc() string
 }
 type MetricsHandler struct {
-	probe Probe
+	probes []Probe
 }
 
 func(m *MetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	reading := m.probe.ReadProbe()
-	metric := m.probe.GetMetricName()
-	desc := m.probe.GetMetricDesc()
+	for _, p := range m.probes {
+	reading := p.ReadProbe()
+	metric := p.GetMetricName()
+	desc := p.GetMetricDesc()
 	fmt.Fprintf(w, "# TYPE %s gauge\n", metric)
 	fmt.Fprintf(w, "# HELP %s %s\n", metric, desc)
 	fmt.Fprintf(w, "%s %f\n", metric, reading)
+	}
 }
 
-func NewMetricsHandler(p Probe) *MetricsHandler {
+func NewMetricsHandler(p []Probe) *MetricsHandler {
 	return &MetricsHandler{
-		probe: p,
+		probes: p,
 	}
 }

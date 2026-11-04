@@ -27,6 +27,7 @@ func (p *MockProbe) GetMetricDesc() string{
 }
 
 func TestMetricsServeHTTP(t *testing.T) {
+	t.Run("Single probe", func(t *testing.T){
 	const expected = `
 		# HELP room_temperature_celsius Temperature of the room in degrees celsius
 		# TYPE room_temperature_celsius gauge
@@ -35,23 +36,59 @@ func TestMetricsServeHTTP(t *testing.T) {
 	`
 	expectedReader := strings.NewReader(expected)
 
-	probe := &MockProbe{
+	probes := []Probe{&MockProbe{
 		value: 10.5,
 		metricName: "room_temperature_celsius",
 		metricDesc: "Temperature of the room in degrees celsius",
-	}
+	}}
 
-	handler := NewMetricsHandler(probe)
+	handler := NewMetricsHandler(probes)
 	ts := httptest.NewServer(handler)
 	t.Cleanup(ts.Close)
 
 	if err := testutil.ScrapeAndCompare(ts.URL, expectedReader); err != nil {
 		t.Errorf("unexpected scraping result: \n%v", err)
 	}
+})
+
+t.Run("multiple probes", func(t *testing.T){
+	const expected = `
+		# HELP room_temperature_celsius Temperature of the room in degrees celsius
+		# TYPE room_temperature_celsius gauge
+	
+		room_temperature_celsius 10.5
+		
+		# HELP room_volume_decibels Sound volume of the room in decibels
+		# TYPE room_volume_decibels gauge
+		room_volume_decibels 2.5
+	`
+	expectedReader := strings.NewReader(expected)
+
+	probe1 := &MockProbe{
+		value: 10.5,
+		metricName: "room_temperature_celsius",
+		metricDesc: "Temperature of the room in degrees celsius",
+	}
+	probe2 := &MockProbe{
+		value: 2.5,
+		metricName: "room_volume_decibels",
+		metricDesc: "Sound volume of the room in decibels",
+	}
+	probes := []Probe{probe1, probe2}
+
+	handler := NewMetricsHandler(probes)
+	ts := httptest.NewServer(handler)
+	t.Cleanup(ts.Close)
+
+	if err := testutil.ScrapeAndCompare(ts.URL, expectedReader); err != nil {
+		t.Errorf("unexpected scraping result: \n%v", err)
+	}
+
+})
 }
 
 func TestMetricsServerIntegration(t *testing.T) {
-	tempProbe := &SimulatedTemperatureService{}
+	tempProbe := []Probe{&SimulatedTemperatureService{}}
 
 	handler := NewMetricsHandler(tempProbe)
 	ts := httptest.NewServer(handler)
