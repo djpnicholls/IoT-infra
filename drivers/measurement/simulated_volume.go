@@ -42,3 +42,14 @@ func (v *SimulatedVolumeService) GetReading() Reading {
 	v.LastReading = reading
 	return reading
 }
+
+
+func (t *SimulatedVolumeService) ReadProbe() float64 {
+	return t.GetReading().Value()
+}
+func (t *SimulatedVolumeService) GetMetricName() string {
+	return "room_volume_decibels"
+}
+func (t *SimulatedVolumeService) GetMetricDesc() string {
+	return  "Sound volume of the room in decibels"
+}
