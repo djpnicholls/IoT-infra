@@ -140,64 +140,64 @@ func TestMetricsServeHTTP(t *testing.T) {
 
 func TestMetricsServerIntegration(t *testing.T) {
 	t.Run("temperature probe", func(t *testing.T) {
-	tempProbe := []Probe{&SimulatedTemperatureService{}}
+		tempProbe := []Probe{&SimulatedTemperatureService{}}
 
-	handler := NewMetricsHandler(tempProbe)
-	ts := httptest.NewServer(handler)
-	t.Cleanup(ts.Close)
+		handler := NewMetricsHandler(tempProbe)
+		ts := httptest.NewServer(handler)
+		t.Cleanup(ts.Close)
 
-	resp, err := http.Get(ts.URL)
-	if err != nil {
-		t.Errorf("Error scraping metrics: %v", err)
-	}
-	defer resp.Body.Close()
-
-	parser := expfmt.NewTextParser(model.UTF8Validation)
-	metricFamilies, err := parser.TextToMetricFamilies(resp.Body)
-	if err != nil {
-		t.Errorf("Error parsing metric format: %v", err)
-	}
-	family, exists := metricFamilies["room_temperature_celsius"]
-	if !exists {
-		t.Fatalf("Missing required metric from scrape values")
-	}
-	for _, m := range family.Metric {
-		value := m.Gauge.GetValue()
-		if value < -10 || value > 30 {
-			t.Errorf("Metric out of range: %f", value)
+		resp, err := http.Get(ts.URL)
+		if err != nil {
+			t.Errorf("Error scraping metrics: %v", err)
 		}
+		defer resp.Body.Close()
 
-	}
-})
-t.Run("volume probe", func(t *testing.T) {
-
-	volProbe := []Probe{&SimulatedVolumeService{}}
-
-	handler := NewMetricsHandler(volProbe)
-	ts := httptest.NewServer(handler)
-	t.Cleanup(ts.Close)
-
-	resp, err := http.Get(ts.URL)
-	if err != nil {
-		t.Errorf("Error scraping metrics: %v", err)
-	}
-	defer resp.Body.Close()
-
-	parser := expfmt.NewTextParser(model.UTF8Validation)
-	metricFamilies, err := parser.TextToMetricFamilies(resp.Body)
-	if err != nil {
-		t.Errorf("Error parsing metric format: %v", err)
-	}
-	family, exists := metricFamilies["room_volume_decibels"]
-	if !exists {
-		t.Fatalf("Missing required metric from scrape values")
-	}
-	for _, m := range family.Metric {
-		value := m.Gauge.GetValue()
-		if value < -10 || value > 30 {
-			t.Errorf("Metric out of range: %f", value)
+		parser := expfmt.NewTextParser(model.UTF8Validation)
+		metricFamilies, err := parser.TextToMetricFamilies(resp.Body)
+		if err != nil {
+			t.Errorf("Error parsing metric format: %v", err)
 		}
+		family, exists := metricFamilies["room_temperature_celsius"]
+		if !exists {
+			t.Fatalf("Missing required metric from scrape values")
+		}
+		for _, m := range family.Metric {
+			value := m.Gauge.GetValue()
+			if value < -10 || value > 30 {
+				t.Errorf("Metric out of range: %f", value)
+			}
 
-	}
-})
+		}
+	})
+	t.Run("volume probe", func(t *testing.T) {
+
+		volProbe := []Probe{&SimulatedVolumeService{}}
+
+		handler := NewMetricsHandler(volProbe)
+		ts := httptest.NewServer(handler)
+		t.Cleanup(ts.Close)
+
+		resp, err := http.Get(ts.URL)
+		if err != nil {
+			t.Errorf("Error scraping metrics: %v", err)
+		}
+		defer resp.Body.Close()
+
+		parser := expfmt.NewTextParser(model.UTF8Validation)
+		metricFamilies, err := parser.TextToMetricFamilies(resp.Body)
+		if err != nil {
+			t.Errorf("Error parsing metric format: %v", err)
+		}
+		family, exists := metricFamilies["room_volume_decibels"]
+		if !exists {
+			t.Fatalf("Missing required metric from scrape values")
+		}
+		for _, m := range family.Metric {
+			value := m.Gauge.GetValue()
+			if value < -10 || value > 30 {
+				t.Errorf("Metric out of range: %f", value)
+			}
+
+		}
+	})
 }
