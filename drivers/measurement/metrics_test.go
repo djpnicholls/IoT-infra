@@ -11,48 +11,49 @@ import (
 	"github.com/prometheus/common/model"
 )
 
-type MockProbe struct{
-	value float64
+type MockProbe struct {
+	value      float64
 	metricName string
 	metricDesc string
 }
+
 func (p *MockProbe) ReadProbe() float64 {
 	return p.value
 }
 func (p *MockProbe) GetMetricName() string {
 	return p.metricName
 }
-func (p *MockProbe) GetMetricDesc() string{
+func (p *MockProbe) GetMetricDesc() string {
 	return p.metricDesc
 }
 
 func TestMetricsServeHTTP(t *testing.T) {
-	t.Run("Single probe", func(t *testing.T){
-	const expected = `
+	t.Run("Single probe", func(t *testing.T) {
+		const expected = `
 		# HELP room_temperature_celsius Temperature of the room in degrees celsius
 		# TYPE room_temperature_celsius gauge
 	
 		room_temperature_celsius 10.5
 	`
-	expectedReader := strings.NewReader(expected)
+		expectedReader := strings.NewReader(expected)
 
-	probes := []Probe{&MockProbe{
-		value: 10.5,
-		metricName: "room_temperature_celsius",
-		metricDesc: "Temperature of the room in degrees celsius",
-	}}
+		probes := []Probe{&MockProbe{
+			value:      10.5,
+			metricName: "room_temperature_celsius",
+			metricDesc: "Temperature of the room in degrees celsius",
+		}}
 
-	handler := NewMetricsHandler(probes)
-	ts := httptest.NewServer(handler)
-	t.Cleanup(ts.Close)
+		handler := NewMetricsHandler(probes)
+		ts := httptest.NewServer(handler)
+		t.Cleanup(ts.Close)
 
-	if err := testutil.ScrapeAndCompare(ts.URL, expectedReader); err != nil {
-		t.Errorf("unexpected scraping result: \n%v", err)
-	}
-})
+		if err := testutil.ScrapeAndCompare(ts.URL, expectedReader); err != nil {
+			t.Errorf("unexpected scraping result: \n%v", err)
+		}
+	})
 
-t.Run("multiple probes", func(t *testing.T){
-	const expected = `
+	t.Run("multiple probes", func(t *testing.T) {
+		const expected = `
 		# HELP room_temperature_celsius Temperature of the room in degrees celsius
 		# TYPE room_temperature_celsius gauge
 	
@@ -62,29 +63,29 @@ t.Run("multiple probes", func(t *testing.T){
 		# TYPE room_volume_decibels gauge
 		room_volume_decibels 2.5
 	`
-	expectedReader := strings.NewReader(expected)
+		expectedReader := strings.NewReader(expected)
 
-	probe1 := &MockProbe{
-		value: 10.5,
-		metricName: "room_temperature_celsius",
-		metricDesc: "Temperature of the room in degrees celsius",
-	}
-	probe2 := &MockProbe{
-		value: 2.5,
-		metricName: "room_volume_decibels",
-		metricDesc: "Sound volume of the room in decibels",
-	}
-	probes := []Probe{probe1, probe2}
+		probe1 := &MockProbe{
+			value:      10.5,
+			metricName: "room_temperature_celsius",
+			metricDesc: "Temperature of the room in degrees celsius",
+		}
+		probe2 := &MockProbe{
+			value:      2.5,
+			metricName: "room_volume_decibels",
+			metricDesc: "Sound volume of the room in decibels",
+		}
+		probes := []Probe{probe1, probe2}
 
-	handler := NewMetricsHandler(probes)
-	ts := httptest.NewServer(handler)
-	t.Cleanup(ts.Close)
+		handler := NewMetricsHandler(probes)
+		ts := httptest.NewServer(handler)
+		t.Cleanup(ts.Close)
 
-	if err := testutil.ScrapeAndCompare(ts.URL, expectedReader); err != nil {
-		t.Errorf("unexpected scraping result: \n%v", err)
-	}
+		if err := testutil.ScrapeAndCompare(ts.URL, expectedReader); err != nil {
+			t.Errorf("unexpected scraping result: \n%v", err)
+		}
 
-})
+	})
 }
 
 func TestMetricsServerIntegration(t *testing.T) {

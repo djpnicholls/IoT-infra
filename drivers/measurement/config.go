@@ -10,6 +10,7 @@ import (
 type UnknownSourceError struct {
 	Source string
 }
+
 func (e UnknownSourceError) Error() string {
 	return fmt.Sprintf("Unrecognised measurement source: %q", e.Source)
 }
@@ -17,54 +18,62 @@ func (e UnknownSourceError) Error() string {
 type UnknownListenerTypeError struct {
 	LType string
 }
+
 func (e UnknownListenerTypeError) Error() string {
 	return fmt.Sprintf("Unrecognised listener type: %q", e.LType)
 }
 
-type MissingListenerAddressError struct {}
+type MissingListenerAddressError struct{}
+
 func (e MissingListenerAddressError) Error() string {
 	return "Missing listener address. Set LISTEN_PID or MEASUREMENT_LISTENER_ADDRESS"
 }
 
 type MeasurementSource int
+
 const (
 	SourceVolume MeasurementSource = iota
 	SourceTemp   MeasurementSource = iota
 )
-var MeasurementSourceName = map[MeasurementSource]string {
+
+var MeasurementSourceName = map[MeasurementSource]string{
 	SourceVolume: "volume",
-	SourceTemp: "temp",
+	SourceTemp:   "temp",
 }
+
 func (ms MeasurementSource) String() string {
 	return MeasurementSourceName[ms]
 }
 
-type ListenerType int 
+type ListenerType int
+
 const (
 	ListenerSystemd ListenerType = iota
 	ListenerUnix    ListenerType = iota
 	ListenerTcp     ListenerType = iota
 )
-var ListenerTypeName = map[ListenerType]string {
+
+var ListenerTypeName = map[ListenerType]string{
 	ListenerSystemd: "systemd",
-	ListenerUnix: "unix",
-	ListenerTcp: "tcp",
+	ListenerUnix:    "unix",
+	ListenerTcp:     "tcp",
 }
+
 func (lt ListenerType) String() string {
 	return ListenerTypeName[lt]
 
 }
 
 type MeasurementConfig struct {
-	ListenerType 	  ListenerType
-	ListenerAddr 	  string
+	ListenerType      ListenerType
+	ListenerAddr      string
 	MeasurementSource MeasurementSource
 }
 
 func NewConfig() (MeasurementConfig, error) {
 	c := MeasurementConfig{}
 	s, err := getMeasurementSource()
-	if err != nil{
+	if err != nil {
 		return MeasurementConfig{}, err
 	}
 	c.MeasurementSource = s
@@ -77,7 +86,7 @@ func NewConfig() (MeasurementConfig, error) {
 	return c, nil
 }
 
-func getMeasurementSource() (MeasurementSource, error){
+func getMeasurementSource() (MeasurementSource, error) {
 	measurementSource := os.Getenv("MEASUREMENT_SOURCE")
 	switch strings.ToLower(measurementSource) {
 	case "volume":
@@ -93,7 +102,7 @@ func getListenerConfig() (ListenerType, string, error) {
 	var t ListenerType
 	var a string
 
-	if os.Getenv("LISTEN_PID") == strconv.Itoa(os.Getpid()){
+	if os.Getenv("LISTEN_PID") == strconv.Itoa(os.Getpid()) {
 		t = ListenerSystemd
 		a = strings.Split(os.Getenv("LISTEN_FDNAMES"), ":")[0]
 	} else {
@@ -106,7 +115,7 @@ func getListenerConfig() (ListenerType, string, error) {
 		default:
 			return 0, "", UnknownListenerTypeError{LType: listenerType}
 		}
-		
+
 		a = os.Getenv("MEASUREMENT_LISTENER_ADDRESS")
 		if a == "" {
 			return 0, "", MissingListenerAddressError{}

@@ -36,8 +36,8 @@ func (v *SimulatedVolumeService) GetReading() Reading {
 		vol = last + delta
 	}
 	reading := VolumeReading{
-		Time: 		time.Now().Unix(),
-		Volume:		vol,
+		Time:   time.Now().Unix(),
+		Volume: vol,
 	}
 	v.LastReading = reading
 	return reading

@@ -9,16 +9,16 @@ func TestSimulatedVolumeService(t *testing.T) {
 	var results []Reading
 	var high int
 	var low int
-	for range(100){
+	for range 100 {
 		result := s.service.GetReading()
 		if result.Value() > 30 {
 			high++
 		} else {
-			low ++
+			low++
 		}
 		results = append(results, result)
 	}
-	
+
 	if high == 0 || low == 0 {
 		t.Errorf("Results aren't spread between high and low: high %d, low %d", high, low)
 	}

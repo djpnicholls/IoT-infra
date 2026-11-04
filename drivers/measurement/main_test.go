@@ -14,15 +14,15 @@ import (
 )
 
 type TestReading struct {
-	Time int64 `json:"time"`
+	Time    int64   `json:"time"`
 	TestVal float64 `json:"value"`
 }
 
-func (r TestReading) Value() float64 { return r.TestVal }
+func (r TestReading) Value() float64   { return r.TestVal }
 func (r TestReading) Timestamp() int64 { return r.Time }
 
 type TestMeasurementService struct {
-	Calls int
+	Calls    int
 	Readings []Reading
 }
 
@@ -42,7 +42,7 @@ func NewTestMeasurementServer(testReadings []TestReading) *MeasurementServer {
 	testService.SetReadings(testReadings)
 	return &MeasurementServer{
 		Listener: nil,
-		service: testService,
+		service:  testService,
 	}
 }
 
@@ -70,7 +70,7 @@ func TestHandleConn(t *testing.T) {
 	})
 
 	done := make(chan struct{})
-	go func() {defer close(done); s.handleConn(ctx, srv, time.Millisecond*50)}()
+	go func() { defer close(done); s.handleConn(ctx, srv, time.Millisecond*50) }()
 
 	t.Run("serves measurement data", func(t *testing.T) {
 		var buf bytes.Buffer
@@ -120,7 +120,7 @@ func TestHandleConn(t *testing.T) {
 	})
 }
 
-func TestGetListener(t *testing.T){
+func TestGetListener(t *testing.T) {
 	tempdir := t.TempDir()
 	unixAddr := filepath.Join(tempdir, "test.sock")
 

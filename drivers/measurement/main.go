@@ -79,7 +79,7 @@ func NewServer(cfg MeasurementConfig, ln net.Listener) *MeasurementServer {
 	switch cfg.MeasurementSource {
 	case SourceVolume:
 		return NewSimulatedVolumeServer(ln)
-	case SourceTemp :
+	case SourceTemp:
 		return NewSimulatedTemperatureServer(ln)
 	default:
 		log.Fatalf("Missing measurement source: %q", cfg.MeasurementSource)

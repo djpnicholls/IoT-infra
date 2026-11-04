@@ -6,12 +6,12 @@ import (
 )
 
 func TestNewConfig(t *testing.T) {
-	var configTests = []struct{
-		name string
-		msource string
-		ltype string
-		laddr string
-		expected MeasurementConfig
+	var configTests = []struct {
+		name        string
+		msource     string
+		ltype       string
+		laddr       string
+		expected    MeasurementConfig
 		validateErr func(t *testing.T, err error)
 	}{
 		{
@@ -21,8 +21,8 @@ func TestNewConfig(t *testing.T) {
 			"/tmp/list.sock",
 			MeasurementConfig{
 				MeasurementSource: SourceVolume,
-				ListenerType: ListenerUnix,
-				ListenerAddr: "/tmp/list.sock",
+				ListenerType:      ListenerUnix,
+				ListenerAddr:      "/tmp/list.sock",
 			},
 			nil,
 		},
@@ -33,8 +33,8 @@ func TestNewConfig(t *testing.T) {
 			":8080",
 			MeasurementConfig{
 				MeasurementSource: SourceTemp,
-				ListenerType: ListenerTcp,
-				ListenerAddr: ":8080",
+				ListenerType:      ListenerTcp,
+				ListenerAddr:      ":8080",
 			},
 			nil,
 		},
@@ -45,8 +45,8 @@ func TestNewConfig(t *testing.T) {
 			":8080",
 			MeasurementConfig{
 				MeasurementSource: SourceTemp,
-				ListenerType: ListenerTcp,
-				ListenerAddr: ":8080",
+				ListenerType:      ListenerTcp,
+				ListenerAddr:      ":8080",
 			},
 			nil,
 		},
@@ -98,21 +98,21 @@ func TestNewConfig(t *testing.T) {
 	}
 
 	for _, ct := range configTests {
-	t.Run(ct.name, func(t *testing.T) {
-		t.Setenv("MEASUREMENT_SOURCE", ct.msource)
-		t.Setenv("MEASUREMENT_LISTENER_TYPE", ct.ltype)
-		t.Setenv("MEASUREMENT_LISTENER_ADDRESS", ct.laddr)
-		got, err := NewConfig()
-		if ct.validateErr != nil {
-			ct.validateErr(t, err)
-		} else {
-			if err != nil {
-				t.Errorf("Unexpected error loading config: %v", err)
+		t.Run(ct.name, func(t *testing.T) {
+			t.Setenv("MEASUREMENT_SOURCE", ct.msource)
+			t.Setenv("MEASUREMENT_LISTENER_TYPE", ct.ltype)
+			t.Setenv("MEASUREMENT_LISTENER_ADDRESS", ct.laddr)
+			got, err := NewConfig()
+			if ct.validateErr != nil {
+				ct.validateErr(t, err)
+			} else {
+				if err != nil {
+					t.Errorf("Unexpected error loading config: %v", err)
+				}
 			}
-		}
-		if got != ct.expected {
-			t.Errorf("Wanted: %q, got %q", ct.expected, got)
-		}
-	})
-}
+			if got != ct.expected {
+				t.Errorf("Wanted: %q, got %q", ct.expected, got)
+			}
+		})
+	}
 }

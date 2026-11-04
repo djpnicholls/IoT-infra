@@ -13,7 +13,7 @@ type SimulatedTemperatureService struct {
 func NewSimulatedTemperatureServer(ln net.Listener) *MeasurementServer {
 	return &MeasurementServer{
 		Listener: ln,
-		service: &SimulatedTemperatureService{},
+		service:  &SimulatedTemperatureService{},
 	}
 }
 
@@ -37,7 +37,7 @@ func SimulateInitialTempReading() float64 {
 	return (rand_reading * 40) - 10
 }
 
-func (t *SimulatedTemperatureService) ReadProbe() float64{
+func (t *SimulatedTemperatureService) ReadProbe() float64 {
 	return t.GetReading().Value()
 }
 func (t *SimulatedTemperatureService) GetMetricName() string {
