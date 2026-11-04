@@ -141,7 +141,7 @@ func TestMetricsServeHTTP(t *testing.T) {
 
 func TestMetricsServerIntegration(t *testing.T) {
 	t.Run("temperature probe", func(t *testing.T) {
-		tempProbe := []Probe{&SimulatedTemperatureService{}}
+		tempProbe := []Probe{&SimulatedTemperatureProbe{}}
 
 		handler := NewMetricsHandler(tempProbe)
 		_, err := scrapeMetricValue(t, handler, "room_temperature_celsius", -10, 30)
@@ -151,12 +151,50 @@ func TestMetricsServerIntegration(t *testing.T) {
 	})
 	t.Run("volume probe", func(t *testing.T) {
 
-		volProbe := []Probe{&SimulatedVolumeService{}}
+		volProbe := []Probe{&SimulatedVolumeProbe{}}
 
 		handler := NewMetricsHandler(volProbe)
 		_, err := scrapeMetricValue(t, handler, "room_volume_decibels", -10, 40)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
+		}
+	})
+	t.Run("multiple probes", func(t *testing.T) {
+		probes := []Probe{
+			&SimulatedVolumeProbe{}, 
+			&SimulatedTemperatureProbe{},
+		}
+
+		handler := NewMetricsHandler(probes)
+		_, err := scrapeMetricValue(t, handler, "room_temperature_celsius", -10, 30)
+		if err != nil {
+			t.Errorf("Unexpected error scraping temperature value: %v", err)
+		}
+		_, err = scrapeMetricValue(t, handler, "room_volume_decibels", -10, 40)
+		if err != nil {
+			t.Errorf("Unexpected error scraping volume value: %v", err)
+		}
+	})
+	t.Run("multiple scrapes return different values", func(t *testing.T) {
+		tempProbe := []Probe{&SimulatedTemperatureProbe{}}
+
+		handler := NewMetricsHandler(tempProbe)
+		value1, err := scrapeMetricValue(t, handler, "room_temperature_celsius", -10, 30)
+		if err != nil {
+			t.Errorf("Unexpected error scraping first time: %v", err)
+		}
+		if len(value1) != 1 {
+			t.Fatalf("Unexpected number of values in first scrape: %d", len(value1))
+		}
+		value2, err := scrapeMetricValue(t, handler, "room_temperature_celsius", -10, 30)
+		if err != nil {
+			t.Errorf("Unexpected error scraping second time: %v", err)
+		}
+		if len(value2) != 1 {
+			t.Fatalf("Unexpected number of values in second scrape: %d", len(value2))
+		}
+		if value1[0] == value2[0] {
+			t.Errorf("Values didn't change. \nFirst: %f \nSecond: %f", value1[0], value2[0])
 		}
 	})
 }

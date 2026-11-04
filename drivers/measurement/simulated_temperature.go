@@ -37,12 +37,22 @@ func SimulateInitialTempReading() float64 {
 	return (rand_reading * 40) - 10
 }
 
-func (t *SimulatedTemperatureService) ReadProbe() float64 {
-	return t.GetReading().Value()
+type SimulatedTemperatureProbe struct {
+	LastReading float64
 }
-func (t *SimulatedTemperatureService) GetMetricName() string {
+func (p *SimulatedTemperatureProbe) ReadProbe() float64 {
+	var temp float64
+	if p.LastReading == 0 {
+		temp = SimulateInitialTempReading()
+	} else {
+		temp = p.LastReading + (rand.Float64() - 0.5)
+	}
+	p.LastReading = temp
+	return temp
+}
+func (p *SimulatedTemperatureProbe) GetMetricName() string {
 	return "room_temperature_celsius"
 }
-func (t *SimulatedTemperatureService) GetMetricDesc() string {
+func (p *SimulatedTemperatureProbe) GetMetricDesc() string {
 	return "Temperature of the room in degrees celsius"
 }

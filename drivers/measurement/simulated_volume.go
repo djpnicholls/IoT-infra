@@ -43,12 +43,33 @@ func (v *SimulatedVolumeService) GetReading() Reading {
 	return reading
 }
 
-func (t *SimulatedVolumeService) ReadProbe() float64 {
-	return t.GetReading().Value()
+type SimulatedVolumeProbe struct {
+	LastReading float64
 }
-func (t *SimulatedVolumeService) GetMetricName() string {
+func (p SimulatedVolumeProbe) ReadProbe() float64 {
+	var vol float64
+	delta := rand.Float64()
+	if p.LastReading == 0 {
+		vol = delta
+	} else {
+		last := p.LastReading
+		if last > 30 {
+			if delta > 0.3 {
+				delta -= 30
+			}
+		} else {
+			if delta < 0.1 {
+				delta += 30
+			}
+		}
+		vol = last + delta
+	}
+	p.LastReading = vol
+	return vol
+}
+func (p SimulatedVolumeProbe) GetMetricName() string {
 	return "room_volume_decibels"
 }
-func (t *SimulatedVolumeService) GetMetricDesc() string {
+func (p SimulatedVolumeProbe) GetMetricDesc() string {
 	return "Sound volume of the room in decibels"
 }
