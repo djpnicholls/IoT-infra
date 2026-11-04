@@ -36,3 +36,13 @@ func SimulateInitialTempReading() float64 {
 	// We want the range -10 to 30
 	return (rand_reading * 40) - 10
 }
+
+func (t *SimulatedTemperatureService) ReadProbe() float64{
+	return t.GetReading().Value()
+}
+func (t *SimulatedTemperatureService) GetMetricName() string {
+	return "room_temperature_celsius"
+}
+func (t *SimulatedTemperatureService) GetMetricDesc() string {
+	return "Temperature of the room in degrees celsius"
+}
