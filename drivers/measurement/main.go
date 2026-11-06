@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -85,6 +87,45 @@ func NewServer(cfg MeasurementConfig, ln net.Listener) *MeasurementServer {
 		log.Fatalf("Missing measurement source: %q", cfg.MeasurementSource)
 	}
 	return nil
+}
+func ConfigureListener(cfg *MeasurementConfig) error {
+	ln, err := GetListener(*cfg)
+	if err != nil {
+		err = fmt.Errorf("Error getting listener: %w", err)
+		return err
+	}
+	cfg.ln = ln
+	return nil
+}
+
+func RunMetricsServer(ctx context.Context, cfg *MeasurementConfig) error {
+
+	handler := NewMetricsHandler([]Probe{
+		&SimulatedTemperatureProbe{},
+		&SimulatedVolumeProbe{},
+	})
+	server := &http.Server{
+		Handler: handler,
+	}
+
+	errCh := make(chan error, 1)
+	go func() {
+		log.Printf("Listening on %s\n", cfg.ln.Addr().String())
+		if err := server.Serve(cfg.ln); err != nil && err != http.ErrServerClosed {
+			errCh <- err
+			return
+		}
+		errCh <- nil
+	}()
+	select {
+	case <-ctx.Done():
+	case err := <-errCh:
+		return err
+	}
+	if err := server.Shutdown(context.Background()); err != nil {
+		return fmt.Errorf("shutdown: %w", err)
+	}
+	return <-errCh
 }
 
 func main() {

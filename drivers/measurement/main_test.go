@@ -5,8 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -160,4 +162,43 @@ func TestGetListener(t *testing.T) {
 			t.Errorf("Unexpected listener address.  Expected next open port on IP 127.0.0.1, got %v:%v", ip, port)
 		}
 	})
+}
+
+func TestRunMetricsServer(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cfg := &MeasurementConfig{
+		ListenerType: ListenerTcp,
+		ListenerAddr: ":8091",
+	}
+	if err := ConfigureListener(cfg); err != nil {
+		t.Fatalf("Error configuring listener: %v", err)
+	}
+
+	errCh := make(chan error, 1)
+	go func(){ errCh <- RunMetricsServer(ctx, cfg)}()
+	resp, err := http.Get(fmt.Sprintf("http://%s/", cfg.ln.Addr().String()))
+	if err != nil {
+		t.Fatalf("Unexpected error calling metrics server: %v", err)
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Errorf("Failed to read body: %v", err)
+	}
+
+	_, err = parseMetricValues(t, io.NopCloser(bytes.NewReader(bodyBytes)), "room_temperature_celsius", -10, 30)
+	if err != nil {
+		t.Errorf("Error scraping temp metric: %v\nResponse: \n%s", err, string(bodyBytes))
+	}
+	_, err = parseMetricValues(t, io.NopCloser(bytes.NewReader(bodyBytes)), "room_volume_decibels", -10, 40)
+	if err != nil {
+		t.Errorf("Error scraping volume metric: %v\nResponse: \n%s", err, string(bodyBytes))
+	}
+
+	cancel()
+
+	if err := <-errCh; err != nil {
+		t.Fatalf("unexpected server error: %v", err)
+	}
 }

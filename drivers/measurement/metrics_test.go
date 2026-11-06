@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -213,8 +214,15 @@ func scrapeMetricValue(t *testing.T, handler http.Handler, metricName string, lo
 	}
 	defer resp.Body.Close()
 
+	return parseMetricValues(t, resp.Body, metricName, lowerBound, upperBound)
+}
+
+func parseMetricValues(t *testing.T, body io.ReadCloser, metricName string, lowerBound, upperBound float64) ([]float64, error) {
+	t.Helper()
+	var values []float64
+
 	parser := expfmt.NewTextParser(model.UTF8Validation)
-	metricFamilies, err := parser.TextToMetricFamilies(resp.Body)
+	metricFamilies, err := parser.TextToMetricFamilies(body)
 	if err != nil {
 		err = fmt.Errorf("Error parsing metric format: %v", err)
 		return values, err
