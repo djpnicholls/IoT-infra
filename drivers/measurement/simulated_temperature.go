@@ -40,6 +40,7 @@ func SimulateInitialTempReading() float64 {
 type SimulatedTemperatureProbe struct {
 	LastReading float64
 }
+
 func (p *SimulatedTemperatureProbe) ReadProbe() float64 {
 	var temp float64
 	if p.LastReading == 0 {

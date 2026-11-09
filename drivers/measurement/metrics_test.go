@@ -162,7 +162,7 @@ func TestMetricsServerIntegration(t *testing.T) {
 	})
 	t.Run("multiple probes", func(t *testing.T) {
 		probes := []Probe{
-			&SimulatedVolumeProbe{}, 
+			&SimulatedVolumeProbe{},
 			&SimulatedTemperatureProbe{},
 		}
 

@@ -46,6 +46,7 @@ func (v *SimulatedVolumeService) GetReading() Reading {
 type SimulatedVolumeProbe struct {
 	LastReading float64
 }
+
 func (p SimulatedVolumeProbe) ReadProbe() float64 {
 	var vol float64
 	delta := rand.Float64()

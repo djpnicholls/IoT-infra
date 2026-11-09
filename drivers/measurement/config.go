@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -69,7 +69,7 @@ type MeasurementConfig struct {
 	ListenerType      ListenerType
 	ListenerAddr      string
 	MeasurementSource MeasurementSource
-	ln 		  net.Listener
+	ln                net.Listener
 }
 
 func NewConfig() (MeasurementConfig, error) {
