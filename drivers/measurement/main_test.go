@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -176,6 +177,11 @@ func TestRunMetricsServer(t *testing.T) {
 
 	errCh := make(chan error, 1)
 	go func(){ errCh <- RunMetricsServer(ctx, cfg)}()
+	tempCh := make(chan float64, 30)
+	volCh := make(chan float64, 30)
+
+	go func() {for range 100 {
+
 	resp, err := http.Get(fmt.Sprintf("http://%s/", cfg.ln.Addr().String()))
 	if err != nil {
 		t.Fatalf("Unexpected error calling metrics server: %v", err)
@@ -187,16 +193,69 @@ func TestRunMetricsServer(t *testing.T) {
 		t.Errorf("Failed to read body: %v", err)
 	}
 
-	_, err = parseMetricValues(t, io.NopCloser(bytes.NewReader(bodyBytes)), "room_temperature_celsius", -10, 30)
+	temp, err := parseMetricValues(t, io.NopCloser(bytes.NewReader(bodyBytes)), "room_temperature_celsius", -10, 30)
 	if err != nil {
 		t.Errorf("Error scraping temp metric: %v\nResponse: \n%s", err, string(bodyBytes))
 	}
-	_, err = parseMetricValues(t, io.NopCloser(bytes.NewReader(bodyBytes)), "room_volume_decibels", -10, 40)
+	for _, v := range temp {
+		tempCh <- v
+	}
+	vol, err := parseMetricValues(t, io.NopCloser(bytes.NewReader(bodyBytes)), "room_volume_decibels", -10, 40)
 	if err != nil {
 		t.Errorf("Error scraping volume metric: %v\nResponse: \n%s", err, string(bodyBytes))
 	}
-
+	for _, v := range vol {
+		volCh <- v
+	}
+}
+	
+	close(tempCh)
+	close(volCh)
 	cancel()
+	}()
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	var lastTemp float64
+	var unchangedTemp int
+	go func() {for i := range tempCh {
+		if lastTemp == 0 {
+			lastTemp = i
+			continue
+		}
+		if i == lastTemp {
+			unchangedTemp++
+		}
+		lastTemp = i
+	}
+	wg.Done()
+	}()
+
+
+	var lastVol float64
+	var unchangedVol int
+	go func() {for i := range volCh {
+		if lastVol == 0 {
+			lastVol = i
+			continue
+		}
+		if i == lastVol {
+			unchangedVol++
+		}
+		lastVol = i
+	}
+	wg.Done()
+}()
+
+	wg.Wait()
+
+	if unchangedTemp > 10 {
+		t.Errorf("%d temperature readings unchanged", unchangedTemp)
+	}
+	if unchangedVol > 10 {
+		t.Errorf("%d volume readings unchanged. Last reading: %f", unchangedVol, lastVol)
+	}
 
 	if err := <-errCh; err != nil {
 		t.Fatalf("unexpected server error: %v", err)
