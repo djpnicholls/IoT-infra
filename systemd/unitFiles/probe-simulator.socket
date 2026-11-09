@@ -1,5 +1,5 @@
 [Unit]
-Description=Socket for temperature simulator
+Description=Socket for probe simulator
 
 [Socket]
 ListenStream=0.0.0.0:8091

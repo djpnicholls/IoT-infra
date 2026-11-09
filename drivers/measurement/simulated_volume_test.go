@@ -5,13 +5,13 @@ import (
 )
 
 func TestSimulatedVolumeService(t *testing.T) {
-	s := NewSimulatedVolumeServer(nil)
-	var results []Reading
+	s := SimulatedVolumeProbe{}
+	var results []float64
 	var high int
 	var low int
 	for range 100 {
-		result := s.service.GetReading()
-		if result.Value() > 30 {
+		result := s.ReadProbe()
+		if result > 30 {
 			high++
 		} else {
 			low++
@@ -20,6 +20,6 @@ func TestSimulatedVolumeService(t *testing.T) {
 	}
 
 	if high == 0 || low == 0 {
-		t.Errorf("Results aren't spread between high and low: high %d, low %d", high, low)
+		t.Errorf("Results aren't spread between high and low: high %d, low %d, \nresults: %v", high, low, results)
 	}
 }

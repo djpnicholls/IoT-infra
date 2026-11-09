@@ -14,16 +14,9 @@
         src: ../systemd/unitFiles/
         dest: /etc/systemd/system
 
-    - name: Enable temperature simulator socket
+    - name: Enable probe simulator socket
       ansible.builtin.systemd_service:
-        name: temperature-simulator.socket
-        enabled: true
-        daemon_reload: true
-        state: started
-
-    - name: Enable volume simulator socket
-      ansible.builtin.systemd_service:
-        name: volume-simulator.socket
+        name: probe-simulator.socket
         enabled: true
         daemon_reload: true
         state: started

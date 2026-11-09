@@ -1,10 +1,9 @@
 [Unit]
-Description=Simulates reading temperatures from a thermometer and exposes these readings on a Unix socket
+Description=Simulates reading temperatures and sound volume and exposes these readings as prometheus
 
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/measurement
-Environment="MEASUREMENT_SOURCE=temp"
 # Set to true outwith container
 DynamicUser=false
 Restart=always

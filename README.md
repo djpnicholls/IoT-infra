@@ -1,5 +1,6 @@
 # IoT-infra
-A place for me to experiment with IoT - creates the OS-level configuration that can be flashed to a raspberry Pi or similar
+A place for me to experiment with IoT - creates the OS-level configuration that can be flashed to a raspberry Pi or similar.
+Also, to discover how much of my (cloud) SRE experience carries over.
 
 Current project: a probe to measure temperature and volume levels, so I can correlate whether temperature has an effect on waking.
 
@@ -9,7 +10,7 @@ Note: Since I currently lack the hardware to measure temperature and volume, the
 
 The probe project consists of two halves: a probe and an analyzer.
 
-The probe is deployed as a pair of systemd services running on a Raspberry Pi B, taking (or simulating) measurements and exposing these on a TCP socket.
+The probe is deployed as a systemd service running on a Raspberry Pi B, taking (or simulating) measurements and exposing these in Prometheus format on a TCP socket.
 
 The analyzer is deployed as a set of containers (podman or k8s), running on a separate Raspberry Pi 5, collecting these measurements and running analysis.
 
@@ -18,15 +19,13 @@ The analyzer is deployed as a set of containers (podman or k8s), running on a se
 ## Probe
 
 This is a Go [programme](./drivers/measurement/).
-While different measurements will be taken, much of the logic is shared among the two probes, so this is one application.  
-The `MEASUREMENT_SOURCE` environment variable determines which measurement this instance of the application takes (possible values: `volume` or `temp`).
 
 This is written in Go because it can be deployed as a single binary, without worrying about interpreters or dependencies.
 
 ## Systemd files
 
-There are four [systemd unit files](./systemd/unitFiles/).
-These create the sockets and services for the temperature and volume probes.
+There are two [systemd unit files](./systemd/unitFiles/).
+These create the socket and service for the probe.
 
 We use socket activation, to avoid wasting work and taking measurements while there's nothing listening.
 

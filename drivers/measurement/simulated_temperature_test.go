@@ -5,11 +5,11 @@ import (
 	"testing"
 )
 
-func TestSimulatedTemperatureServer(t *testing.T) {
-	s := NewSimulatedTemperatureServer(nil)
-	var readings []Reading
+func TestSimulatedTemperatureProbe(t *testing.T) {
+	s := SimulatedTemperatureProbe{}
+	var readings []float64
 	for range 100 {
-		readings = append(readings, s.service.GetReading())
+		readings = append(readings, s.ReadProbe())
 	}
 	if len(readings) != 100 {
 		t.Errorf("Only got %d readings", len(readings))
@@ -19,8 +19,8 @@ func TestSimulatedTemperatureServer(t *testing.T) {
 		if i == 0 {
 			continue
 		}
-		current := readings[i].Value()
-		last := readings[i-1].Value()
+		current := readings[i]
+		last := readings[i-1]
 		if math.Abs(current-last) > 0.5 {
 			t.Errorf("Reading not within half a degree of the last reading.  Current: %g, Last: %g", current, last)
 		}
