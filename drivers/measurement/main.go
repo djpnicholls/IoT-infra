@@ -136,14 +136,12 @@ func main() {
 		log.Fatalf("Error marshalling config: %s", err)
 	}
 
-	ln, err := GetListener(cfg)
-	if err != nil {
+	if err = ConfigureListener(&cfg); err != nil {
 		log.Fatalf("Error listening on socket: %s", err)
 	}
 
 	log.Print("Now serving...")
-	s := NewServer(cfg, ln)
-	if err = s.Serve(ctx); err != nil {
+	if err = RunMetricsServer(ctx, &cfg); err != nil {
 		log.Fatalf("Failed to Serve: %s", err)
 	}
 
