@@ -2,13 +2,13 @@
 
 import subprocess
 import os
-import socket
+import requests
 
 print("Building measurement application...")
 subprocess.run(["go", "build", "-o", "../../dist/measurement_x86", "."], 
 	check=True,
 	cwd="drivers/measurement",
-	env={"GOOS": "linux", "HOME": os.environ.get("HOME")})
+	env={**os.environ, "GOOS": "linux"})
 print("Measurement application built successfully.")
 
 print("\n\n")
@@ -29,5 +29,14 @@ print("Probe container running.  Listening on port 8091")
 
 print("\n\n")
 print("Starting test...")
+
+resp = requests.get(
+	"http://127.0.0.1:8092/",
+	timeout=10,
+)
+resp.raise_for_status()
+
+assert "room_temperature_celsius" in resp.text
+assert "room_volume_decibels" in resp.text
 
 print("Test finished.  Check result.")

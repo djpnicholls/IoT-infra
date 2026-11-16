@@ -2,13 +2,13 @@
 
 import subprocess
 import os
-import socket
+import requests
 
 print("Building measurement application...")
 subprocess.run(["go", "build", "-o", "../../dist/measurement_arm_v6", "."], 
 	check=True,
 	cwd="drivers/measurement",
-	env={"GOARCH": "arm", "GOARM": "6", "HOME": os.environ.get("HOME")})
+	env={**os.environ, "GOARCH": "arm", "GOARM": "6", "GOOS": "linux"})
 print("Measurement application built successfully.")
 
 print("\n\n")
@@ -37,14 +37,13 @@ print("Ansible playbook run successfully.")
 
 print("\n\n")
 print("Starting test...")
-sock1 = socket.create_connection(("127.0.0.1", 8091))
-with sock1.makefile() as s:
-	print(s.readline())
-sock1.close()
+resp = requests.get(
+	"http://127.0.0.1:8092/",
+	timeout=10,
+)
+resp.raise_for_status()
 
-sock2 = socket.create_connection(("127.0.0.1", 8092))
-with sock2.makefile() as s:
-	print(s.readline())
-sock2.close()
+assert "room_temperature_celsius" in resp.text
+assert "room_volume_decibels" in resp.text
 
 print("Test finished.  Check result.")
