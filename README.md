@@ -12,9 +12,16 @@ The probe project consists of two halves: a probe and an analyzer.
 
 The probe is deployed as a systemd service running on a Raspberry Pi B, taking (or simulating) measurements and exposing these in Prometheus format on a TCP socket.
 
-The analyzer is deployed as a set of containers (podman or k8s), running on a separate Raspberry Pi 5, collecting these measurements and running analysis.
+> Design note: why Prometheus?  The temperature data is time-series data.
+> Prometheus format is a simple time-series format that I'm already familiar with.
 
-> Design note: originally, I intended to run these two halves on the same machine.  The probe would be deployed as systemd services at the OS level, since I don't anticipate it changing once it's done, and the analyzer would run on k3s, since it's the item most likely to change and be iterated on.  The probe would have exposed the readings on a unix socket.  But the Raspberry Pi B doesn't have the resources to do this, so the analyzer now runs on a separate host.
+The analyzer is deployed as a set of containers (podman or k3s), running on a separate Raspberry Pi 5, collecting these measurements and running analysis.
+The first container is the Prometheus scraper.
+The second will be the analyzer.
+
+> Design note: separating out the analyzer and the probe onto different hardware allows for proper network segmentation between them, and would allow me to scale the temperature probe to multiple rooms without having to duplicate the analyzer.  
+> (This separation corresponds to layers 2 (probe) and 3 (analyzer) of the Purdue model)
+
 
 ## Probe
 
@@ -35,9 +42,11 @@ There is an [ansible playbook](./ansible/) for deploying the probe to the host i
 
 ## Testing
 
+The probe is tested in a digital twin - an ARMv6 container.  This allows for testing in a realistic environment, without having to deploy to the hardware before every test.
+
 The [test script](build-test.py) is used to test the deployment of the probe.
 It does the following:
 1. Build the probe application
 2. Create a new [container](Containerfile.rpi), simulating a Raspberry Pi B (running 32-bit, arm v6, running a slimmed down version of Raspbian, including Python and systemd).
 3. Run the [ansible playbook](./ansible/) to deploy the probe application properly to the container.
-4. Test that it can reach the correct sockets and receive the correct measurements.
+4. Test that it can scrape metrics and receive the correct response.
