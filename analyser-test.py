@@ -39,4 +39,17 @@ resp.raise_for_status()
 assert "room_temperature_celsius" in resp.text
 assert "room_volume_decibels" in resp.text
 
-print("Test finished.  Check result.")
+print("Test passed.")
+
+print("Pulling victoria metrics container")
+
+subprocess.run(["podman", "pull", "victoriametrics/victoria-metrics:v1.156.0"],check=True)
+
+print("Running victoria metrics container")
+subprocess.run(["podman", "run", "-d", "--rm", "--name", "vmetrics",
+	"--replace", "-v", "test-scrape.yaml:/test-scrape.yaml",
+	"-p", "8428:8428",
+	 "victoriametrics/victoria-metrics:v1.156.0",
+     "-promscrape.config=/test-scrape.yaml",
+     "-selfScrapeInterval=10s"],
+	check=True)
