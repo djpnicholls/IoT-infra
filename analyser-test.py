@@ -31,7 +31,7 @@ print("\n\n")
 print("Starting test...")
 
 resp = requests.get(
-	"http://127.0.0.1:8092/",
+	"http://127.0.0.1:8091/",
 	timeout=10,
 )
 resp.raise_for_status()
