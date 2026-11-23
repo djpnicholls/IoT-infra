@@ -15,6 +15,7 @@ func (p *SimulatedVolumeProbe) ReadProbe() float64 {
 	if last == 0 {
 		vol = delta
 	} else {
+		delta -= 0.5
 		if last > 30 {
 			if delta > 0.3 {
 				delta -= 30
