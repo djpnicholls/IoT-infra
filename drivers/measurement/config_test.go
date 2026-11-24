@@ -75,7 +75,7 @@ func TestNewConfig(t *testing.T) {
 				}
 			}
 			if got != ct.expected {
-				t.Errorf("Wanted: %q, got %q", ct.expected, got)
+				t.Errorf("Wanted: %v, got %v", ct.expected, got)
 			}
 		})
 	}

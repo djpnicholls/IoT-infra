@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net"
 	"os"
@@ -45,6 +46,7 @@ type MeasurementConfig struct {
 	ListenerType      ListenerType
 	ListenerAddr      string
 	ln                net.Listener
+	tlsConfig		  *tls.Config
 }
 
 func NewConfig() (MeasurementConfig, error) {

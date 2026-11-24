@@ -43,16 +43,25 @@ func RunMetricsServer(ctx context.Context, cfg *MeasurementConfig) error {
 	})
 	server := &http.Server{
 		Handler: handler,
+		TLSConfig: cfg.tlsConfig,
 	}
 
 	errCh := make(chan error, 1)
 	go func() {
 		log.Printf("Listening on %s\n", cfg.ln.Addr().String())
-		if err := server.Serve(cfg.ln); err != nil && err != http.ErrServerClosed {
-			errCh <- err
-			return
+		if cfg.tlsConfig == nil {
+			if err := server.Serve(cfg.ln); err != nil && err != http.ErrServerClosed {
+				errCh <- err
+				return
+			}
+			errCh <- nil
+		} else {
+			if err := server.ServeTLS(cfg.ln, "", ""); err != nil && err != http.ErrServerClosed {
+				errCh <- err
+				return
+			}
+			errCh <- nil
 		}
-		errCh <- nil
 	}()
 	select {
 	case <-ctx.Done():
